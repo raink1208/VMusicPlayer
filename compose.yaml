@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./VMusicPlayerServer
+    ports:
+      - "8080:8080"
+      - "6565:6565"
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/VMusicPlayer
+      - SPRING_DATASOURCE_USERNAME=VMusicPlayer
+      - SPRING_DATASOURCE_PASSWORD=VMusicPlayer
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./VMusicPlayerApp
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  db:
+    image: postgres:18
+    container_name: vmusicplayer_db
+    restart: always
+    environment:
+      POSTGRES_USER: VMusicPlayer
+      POSTGRES_PASSWORD: VMusicPlayer
+      POSTGRES_DB: VMusicPlayer
+    ports:
+      - "5432:5432"
+    volumes:
+      - vmusic-pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+networks:
+  app-network:
+
+volumes:
+  vmusic-pgdata:
