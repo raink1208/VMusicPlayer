@@ -1,7 +1,7 @@
 package com.github.rain1208.vmusicplayerserver.repository
 
+import com.github.rain1208.vmusicplayerserver.domain.models.MusicSource
 import com.github.rain1208.vmusicplayerserver.domain.repository.IMusicSourceRepository
-import com.github.rain1208.vmusicplayerserver.repository.dto.MusicSourceDto
 import com.github.rain1208.vmusicplayerserver.repository.mapper.MusicSourceRowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository
 class MusicSourceRepository(private val namedJdbc: NamedParameterJdbcTemplate): IMusicSourceRepository {
     private val musicSourceRowMapper = MusicSourceRowMapper()
 
-    override fun getAllMusicSources(): List<MusicSourceDto> {
+    override fun getAllMusicSources(): List<MusicSource> {
         val sql = """
 SELECT
   ms.public_id AS music_source_id,
@@ -25,7 +25,7 @@ JOIN music_source_types mst ON ms.type_id = mst.id;
         return namedJdbc.query(sql, musicSourceRowMapper)
     }
 
-    override fun saveMusicSource(musicSourceDto: MusicSourceDto): Boolean {
+    override fun saveMusicSource(musicSource: MusicSource): Boolean {
         val sql = """
 INSERT INTO music_sources(public_id, title, url, upload_date, type_id, thumbnail_url)
 VALUES (:public_id, :title, :url, :upload_date, :type_id, :thumbnail_url)
@@ -40,12 +40,12 @@ DO UPDATE SET
 """
 
         val params = mapOf(
-            "public_id" to musicSourceDto.sourceId,
-            "title" to musicSourceDto.title,
-            "url" to musicSourceDto.url,
-            "upload_date" to musicSourceDto.uploadDate,
-            "type_id" to musicSourceDto.sourceType,
-            "thumbnail_url" to musicSourceDto.thumbnailUrl,
+            "public_id" to musicSource.sourceId,
+            "title" to musicSource.title,
+            "url" to musicSource.url,
+            "upload_date" to musicSource.uploadDate,
+            "type_id" to musicSource.sourceType,
+            "thumbnail_url" to musicSource.thumbnailUrl,
         )
 
         namedJdbc.update(sql, params)

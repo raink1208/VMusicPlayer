@@ -1,6 +1,5 @@
 package com.github.rain1208.vmusicplayerserver.domain.models
 
-import com.github.rain1208.vmusicplayerserver.repository.dto.SongDto
 import java.time.Duration
 
 data class Song(
@@ -11,16 +10,4 @@ data class Song(
     val endAt: Duration,
     val source: MusicSource,
     val singers: List<Singer>,
-) {
-    fun toSongDto(): SongDto {
-        return SongDto(
-            songId = songId,
-            title = title,
-            artist = artist,
-            startAt = startAt,
-            endAt = endAt,
-            sourceId = source.sourceId,
-            singerIds = singers.map { it.singerId }
-        )
-    }
-}
+)

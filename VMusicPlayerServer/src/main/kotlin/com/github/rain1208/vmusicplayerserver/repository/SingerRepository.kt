@@ -1,7 +1,7 @@
 package com.github.rain1208.vmusicplayerserver.repository
 
+import com.github.rain1208.vmusicplayerserver.domain.models.Singer
 import com.github.rain1208.vmusicplayerserver.domain.repository.ISingerRepository
-import com.github.rain1208.vmusicplayerserver.repository.dto.SingerDto
 import com.github.rain1208.vmusicplayerserver.repository.mapper.SingerRowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
@@ -10,13 +10,13 @@ import org.springframework.stereotype.Repository
 class SingerRepository(private val namedJdbc: NamedParameterJdbcTemplate): ISingerRepository {
     private val singerRowMapper = SingerRowMapper()
 
-    override fun getAllSingers(): List<SingerDto> {
+    override fun getAllSingers(): List<Singer> {
         val sql = """SELECT public_id, name, youtube_url FROM singers;"""
 
         return namedJdbc.query(sql, singerRowMapper)
     }
 
-    override fun saveSinger(singer: SingerDto): Boolean {
+    override fun saveSinger(singer: Singer): Boolean {
         val sql = """
 INSERT INTO singers (public_id, name, youtube_url, twitter_url)
 VALUES (:public_id, :name, :youtube_url, :twitter_url)

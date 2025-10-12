@@ -2,7 +2,6 @@ package com.github.rain1208.vmusicplayerserver.repository
 
 import com.github.rain1208.vmusicplayerserver.domain.models.Song
 import com.github.rain1208.vmusicplayerserver.domain.repository.ISongRepository
-import com.github.rain1208.vmusicplayerserver.repository.dto.SongDto
 import com.github.rain1208.vmusicplayerserver.repository.mapper.SongRowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
@@ -97,7 +96,7 @@ WHERE s.public_id = :songId;
         return namedJdbc.queryForObject(sql, params, songRowMapper)
     }
 
-    override fun saveSong(song: SongDto): Boolean {
+    override fun saveSong(song: Song): Boolean {
         val saveSongSql = """
 WITH upsert_song AS (
   INSERT INTO songs (public_id, source_id, title, artist, start_at, end_at)
@@ -138,12 +137,12 @@ SELECT (SELECT COUNT(*) FROM ins) AS inserted_count,
 
         val params = mapOf(
             "song_id" to song.songId,
-            "source_id" to song.sourceId,
+            "source_id" to song.source.sourceId,
             "title" to song.title,
             "artist" to song.artist,
             "start_at" to song.startAt,
             "end_at" to song.endAt,
-            "singer_ids" to song.singerIds
+            "singer_ids" to song.singers.map { it.singerId }
         )
 
         namedJdbc.update(saveSongSql, params)
