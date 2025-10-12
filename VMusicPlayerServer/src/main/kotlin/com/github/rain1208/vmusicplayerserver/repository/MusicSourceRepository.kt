@@ -28,7 +28,7 @@ JOIN music_source_types mst ON ms.type_id = mst.id;
     override fun saveMusicSource(musicSourceDto: MusicSourceDto): Boolean {
         val sql = """
 INSERT INTO music_sources(public_id, title, url, upload_date, type_id, thumbnail_url)
-VALUES (:public_id, :title, :url, :upload_date, :type, :thumbnail_url)
+VALUES (:public_id, :title, :url, :upload_date, :type_id, :thumbnail_url)
 ON CONFLICT (public_id)
 DO UPDATE SET
     public_id = EXCLUDED.public_id,
@@ -44,7 +44,7 @@ DO UPDATE SET
             "title" to musicSourceDto.title,
             "url" to musicSourceDto.url,
             "upload_date" to musicSourceDto.uploadDate,
-            "type" to musicSourceDto.sourceType,
+            "type_id" to musicSourceDto.sourceType,
             "thumbnail_url" to musicSourceDto.thumbnailUrl,
         )
 
@@ -53,10 +53,10 @@ DO UPDATE SET
     }
 
     override fun deleteMusicSource(musicSourceId: String): Boolean {
-        val sql = """DELETE FROM music_sources WHERE public_id = :musicSourceId;"""
+        val sql = """DELETE FROM music_sources WHERE public_id = :music_source_id;"""
 
         val params = mapOf(
-            "musicSourceId" to musicSourceId
+            "music_source_id" to musicSourceId
         )
 
         namedJdbc.update(sql, params)

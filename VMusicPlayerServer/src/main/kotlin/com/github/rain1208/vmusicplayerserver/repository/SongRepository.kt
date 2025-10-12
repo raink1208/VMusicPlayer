@@ -67,7 +67,7 @@ WITH song_singers_agg AS (
   FROM song_singers ss
   INNER JOIN singers si ON ss.singer_id = si.id
   INNER JOIN songs s ON ss.song_id = s.id
-  WHERE s.public_id = :songId
+  WHERE s.public_id = :song_id
   GROUP BY ss.song_id
 )
 SELECT
@@ -91,7 +91,7 @@ WHERE s.public_id = :songId;
 """
 
         val params = mapOf(
-            "songId" to songId,
+            "song_id" to songId,
         )
 
         return namedJdbc.queryForObject(sql, params, songRowMapper)
@@ -101,7 +101,7 @@ WHERE s.public_id = :songId;
         val saveSongSql = """
 WITH upsert_song AS (
   INSERT INTO songs (public_id, source_id, title, artist, start_at, end_at)
-  VALUES (:song_public_id, :source_id, :title, :artist, :startAt, :endAt)
+  VALUES (:song_id, :source_id, :title, :artist, :start_at, :end_at)
   ON CONFLICT (public_id)
   DO UPDATE SET
     source_id  = EXCLUDED.source_id,
@@ -115,7 +115,7 @@ WITH upsert_song AS (
 desired AS (
   SELECT us.id AS song_id, s.id AS singer_id
   FROM upsert_song us
-  JOIN UNNEST(COALESCE(:singer_public_ids::text[], '{}'::text[])) spid ON TRUE
+  JOIN UNNEST(COALESCE(:singer_ids::text[], '{}'::text[])) spid ON TRUE
   JOIN singers s ON s.public_id = spid
 ),
 ins AS (
@@ -137,13 +137,13 @@ SELECT (SELECT COUNT(*) FROM ins) AS inserted_count,
 """
 
         val params = mapOf(
-            "song_public_id" to song.songId,
+            "song_id" to song.songId,
             "source_id" to song.sourceId,
             "title" to song.title,
             "artist" to song.artist,
             "start_at" to song.startAt,
             "end_at" to song.endAt,
-            "singer_public_ids" to song.singerIds
+            "singer_ids" to song.singerIds
         )
 
         namedJdbc.update(saveSongSql, params)

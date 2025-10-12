@@ -15,7 +15,7 @@ class SearchRepository(private val namedJdbc: NamedParameterJdbcTemplate): ISear
 WITH target_songs AS (
   SELECT s.id AS song_id
   FROM songs s
-  WHERE s.title ILIKE '%' || :songTitle || '%'
+  WHERE s.title ILIKE '%' || :song_title || '%'
 ),
 song_singers_agg AS (
   SELECT
@@ -46,7 +46,7 @@ INNER JOIN song_singers_agg ssa ON s.id = ssa.song_id;
 """
 
         val params = mapOf(
-            "songTitle" to songTitle,
+            "song_title" to songTitle,
         )
 
         return namedJdbc.query(sql, params, songRowMapper)
@@ -58,7 +58,7 @@ WITH target_songs AS (
   SELECT DISTINCT ss.song_id
   FROM song_singers ss
   INNER JOIN singers si ON ss.singer_id = si.id
-  WHERE si.name ILIKE '%' || :songArtist || '%'  -- 部分一致で検索
+  WHERE si.name ILIKE '%' || :song_artist || '%'  -- 部分一致で検索
 ),
 song_singers_agg AS (
   SELECT
@@ -89,7 +89,7 @@ INNER JOIN song_singers_agg ssa ON s.id = ssa.song_id;
 """
 
         val params = mapOf(
-            "songArtist" to songArtist,
+            "song_artist" to songArtist,
         )
 
         return namedJdbc.query(sql, params, songRowMapper)
@@ -100,7 +100,7 @@ INNER JOIN song_singers_agg ssa ON s.id = ssa.song_id;
 WITH target_singer AS (
   SELECT id
   FROM singers
-  WHERE name ILIKE '%' || :singerName || '%'
+  WHERE name ILIKE '%' || :singer_name || '%'
 ),
 target_songs AS (
   SELECT DISTINCT ss.song_id
@@ -142,7 +142,7 @@ INNER JOIN song_singers_agg ssa ON s.id = ssa.song_id;
 """
 
         val params = mapOf(
-            "singerName" to singerName,
+            "singer_name" to singerName,
         )
 
         return namedJdbc.query(sql, params, songRowMapper)
@@ -154,7 +154,7 @@ WITH target_songs AS (
   SELECT s.id AS song_id
   FROM songs s
   INNER JOIN music_sources ms ON s.source_id = ms.id
-  WHERE ms.public_id = :musicSourceId
+  WHERE ms.public_id = :music_source_id
 ),
 song_singers_agg AS (
   SELECT
@@ -185,7 +185,7 @@ LEFT JOIN song_singers_agg ssa ON s.id = ssa.song_id;
 """
 
         val params = mapOf(
-            "musicSourceId" to musicSourceId
+            "music_source_id" to musicSourceId
         )
 
         return namedJdbc.query(sql, params, songRowMapper)
@@ -196,7 +196,7 @@ LEFT JOIN song_singers_agg ssa ON s.id = ssa.song_id;
 WITH target_singer AS (
   SELECT id
   FROM singers
-  WHERE public_id = :singerId
+  WHERE public_id = :singer_id
 ),
 target_songs AS (
   SELECT DISTINCT ss.song_id
@@ -240,7 +240,7 @@ INNER JOIN song_singers_agg ssa ON s.id = ssa.song_id;
 """
 
         val params = mapOf(
-            "singerId" to singerId,
+            "singer_id" to singerId,
         )
 
         return namedJdbc.query(sql, params, songRowMapper)

@@ -19,7 +19,7 @@ class SingerRepository(private val namedJdbc: NamedParameterJdbcTemplate): ISing
     override fun saveSinger(singer: SingerDto): Boolean {
         val sql = """
 INSERT INTO singers (public_id, name, youtube_url, twitter_url)
-VALUES (:publicId, :name, :youtubeUrl, :twitterUrl)
+VALUES (:public_id, :name, :youtube_url, :twitter_url)
 ON CONFLICT (public_id)
 DO UPDATE SET
     name = EXCLUDED.name,
@@ -29,10 +29,10 @@ DO UPDATE SET
 """
 
         val params = mapOf(
-            "publicId" to singer.singerId,
+            "public_id" to singer.singerId,
             "name" to singer.singerName,
-            "youtubeUrl" to singer.youtubeURL,
-            "twitterUrl" to singer.twitterURL,
+            "youtube_url" to singer.youtubeURL,
+            "twitter_url" to singer.twitterURL,
         )
 
         namedJdbc.update(sql, params)
@@ -40,10 +40,10 @@ DO UPDATE SET
     }
 
     override fun deleteSinger(singerId: String): Boolean {
-        val sql = """DELETE FROM singers WHERE (public_id = :publicId);"""
+        val sql = """DELETE FROM singers WHERE (public_id = :public_id);"""
 
         val params = mapOf(
-            "publicId" to singerId,
+            "public_id" to singerId,
         )
 
         namedJdbc.update(sql, params)
