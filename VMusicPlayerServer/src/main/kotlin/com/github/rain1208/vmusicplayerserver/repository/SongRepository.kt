@@ -86,7 +86,7 @@ FROM songs s
 INNER JOIN music_sources ms ON s.source_id = ms.id
 INNER JOIN music_source_types mst ON ms.type_id = mst.id
 LEFT JOIN song_singers_agg ssa ON s.id = ssa.song_id
-WHERE s.public_id = :songId;
+WHERE s.public_id = :song_id;
 """
 
         val params = mapOf(
