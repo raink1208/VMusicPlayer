@@ -34,7 +34,7 @@ class SongRowMapper: RowMapper<Song> {
                 url = rs.getString("music_source_url"),
                 uploadDate = rs.getString("music_source_upload_date"),
                 thumbnailUrl = rs.getString("music_source_thumbnail_url"),
-                sourceType = MusicSourceType.valueOf(rs.getString("music_source_type"))
+                sourceType = MusicSourceType.of(rs.getString("music_source_type"))
             ),
             singers = singers
         )
