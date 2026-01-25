@@ -709,5 +709,159 @@
         "artist": "鈴木このみ"
       }
     ]
+  },
+  {
+    "title": "【 #つかぷー24 】全部3D！？つかぷー24時間配信、前編始まります！✨【 領国つかさ / すぺしゃりて 】",
+    "url": "https://www.youtube.com/watch?v=E5_3ojywJe0",
+    "upload_date": "2026/01/10",
+    "thumbnail_url": "http://img.youtube.com/vi/E5_3ojywJe0/maxresdefault.jpg",
+    "sourceType": "live",
+    "songs": [
+      {
+        "title": "太陽系デスコ",
+        "start_at": "00:36:48",
+        "end_at": "00:40:16",
+        "singers": [
+          "領国つかさ",
+          "星屑ぷらね"
+        ],
+        "artist": "ナユタン星人"
+      },
+      {
+        "title": "さくらんぼ",
+        "start_at": "09:01:23",
+        "end_at": "09:05:12",
+        "singers": [
+          "領国つかさ",
+          "星屑ぷらね",
+          "小鳥谷なの",
+          "あいうらら"
+        ],
+        "artist": "大塚愛"
+      },
+      {
+        "title": "IRIS OUT",
+        "start_at": "09:06:46",
+        "end_at": "09:09:13",
+        "singers": [
+          "領国つかさ",
+          "星屑ぷらね",
+          "小鳥谷なの",
+          "あいうらら"
+        ],
+        "artist": "米津玄師"
+      },
+      {
+        "title": "カブトムシ",
+        "start_at": "09:19:33",
+        "end_at": "09:24:45",
+        "singers": [
+          "領国つかさ",
+          "星屑ぷらね",
+          "小鳥谷なの",
+          "あいうらら"
+        ],
+        "artist": "aiko"
+      },
+      {
+        "title": "ケロッ!とマーチ",
+        "start_at": "09:24:58",
+        "end_at": "09:28:06",
+        "singers": [
+          "領国つかさ",
+          "星屑ぷらね",
+          "小鳥谷なの",
+          "あいうらら"
+        ],
+        "artist": "角田信朗＆いはたじゅり"
+      },
+      {
+        "title": "イケナイ太陽",
+        "start_at": "09:31:00",
+        "end_at": "09:35:17",
+        "singers": [
+          "領国つかさ",
+          "星屑ぷらね",
+          "小鳥谷なの",
+          "あいうらら"
+        ],
+        "artist": "Orange Range"
+      }
+    ]
+  },
+  {
+    "title": "【#つかぷー24】全部3D！？つかぷー24時間配信、後半！最後まで駆け抜けるぞ✨",
+    "url": "https://www.youtube.com/watch?v=sPAz3y0XE9Y",
+    "upload_date": "2026/01/11",
+    "thumbnail_url": "http://img.youtube.com/vi/sPAz3y0XE9Y/maxresdefault.jpg",
+    "sourceType": "live",
+    "songs": [
+      {
+        "title": "ハッピーシンセサイザ",
+        "start_at": "11:48:35",
+        "end_at": "11:52:25",
+        "singers": [
+          "領国つかさ"
+        ],
+        "artist": "鈴木このみ"
+      }
+    ]
+  },
+  {
+    "title": "すぺしゃりて1期生2周年記念ライブ",
+    "url": "https://www.youtube.com/watch?v=FQW0sk6pY0c",
+    "upload_date": "2026/01/24",
+    "thumbnail_url": "http://img.youtube.com/vi/FQW0sk6pY0c/maxresdefault.jpg",
+    "sourceType": "live",
+    "songs": [
+      {
+        "title": "バカ通信",
+        "start_at": "00:04:56",
+        "end_at": "00:07:25",
+        "singers": [
+          "領国つかさ",
+          "小鳥谷なの"
+        ],
+        "artist": "isonosuke"
+      },
+      {
+        "title": "好きすぎで滅",
+        "start_at": "00:33:27",
+        "end_at": "00:36:57",
+        "singers": [
+          "領国つかさ",
+          "藍坂しう"
+        ],
+        "artist": "M!LK"
+      },
+      {
+        "title": "トンデモワンダーズ",
+        "start_at": "01:02:10",
+        "end_at": "01:05:24",
+        "singers": [
+          "小鳥谷なの",
+          "尾幌こま",
+          "藍坂しう",
+          "領国つかさ",
+          "ミーニャ・スコット",
+          "本阿弥あずさ"
+        ],
+        "artist": "sasakure UK"
+      },
+      {
+        "title": "Snow halation",
+        "start_at": "01:14:16",
+        "end_at": "01:18:33",
+        "singers": [
+          "小鳥谷なの",
+          "尾幌こま",
+          "藍坂しう",
+          "領国つかさ",
+          "ミーニャ・スコット",
+          "本阿弥あずさ"
+        ],
+        "artist": "μ’s"
+      }
+    ]
   }
 ]
