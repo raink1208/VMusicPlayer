@@ -10,4 +10,7 @@ interface ISearchRepository {
 
     fun getSongsByMusicSourceId(musicSourceId: String): List<Song>
     fun getSongsBySingerId(singerId: String): List<Song>
+
+    fun generalSearch(query: String): List<Song>
+    fun complexSearch(title: String?, singers: List<String>, artist: String?): List<Song>
 }

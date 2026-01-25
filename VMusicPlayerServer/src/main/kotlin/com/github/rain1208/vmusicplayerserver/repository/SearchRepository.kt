@@ -20,7 +20,12 @@ WITH target_songs AS (
 song_singers_agg AS (
   SELECT
     ss.song_id,
-    STRING_AGG(si.name, ', ') AS singers
+    json_agg(
+      json_build_object(
+        'singer_id', si.public_id,
+        'singer_name', si.name
+      ) ORDER BY si.name
+    ) AS singers
   FROM song_singers ss
   INNER JOIN singers si ON ss.singer_id = si.id
   GROUP BY ss.song_id
@@ -63,7 +68,12 @@ WITH target_songs AS (
 song_singers_agg AS (
   SELECT
     ss.song_id,
-    STRING_AGG(si.name, ', ') AS singers
+    json_agg(
+      json_build_object(
+        'singer_id', si.public_id,
+        'singer_name', si.name
+      ) ORDER BY si.name
+    ) AS singers
   FROM song_singers ss
   INNER JOIN singers si ON ss.singer_id = si.id
   GROUP BY ss.song_id
@@ -159,7 +169,12 @@ WITH target_songs AS (
 song_singers_agg AS (
   SELECT
     ss.song_id,
-    STRING_AGG(si.name, ', ') AS singers
+    json_agg(
+      json_build_object(
+        'singer_id', si.public_id,
+        'singer_name', si.name
+      ) ORDER BY si.name
+    ) AS singers
   FROM song_singers ss
   INNER JOIN singers si ON ss.singer_id = si.id
   GROUP BY ss.song_id
@@ -242,6 +257,135 @@ INNER JOIN song_singers_agg ssa ON s.id = ssa.song_id;
         val params = mapOf(
             "singer_id" to singerId,
         )
+
+        return namedJdbc.query(sql, params, songRowMapper)
+    }
+
+    override fun generalSearch(query: String): List<Song> {
+        val sql = """
+WITH target_songs AS (
+  SELECT DISTINCT s.id AS song_id
+  FROM songs s
+  LEFT JOIN song_singers ss ON s.id = ss.song_id
+  LEFT JOIN singers si ON ss.singer_id = si.id
+  WHERE s.title ILIKE '%' || :query || '%'
+     OR s.artist ILIKE '%' || :query || '%'
+     OR si.name ILIKE '%' || :query || '%'
+),
+song_singers_agg AS (
+  SELECT
+    ss.song_id,
+    json_agg(
+      json_build_object(
+        'singer_id', si.public_id,
+        'singer_name', si.name
+      ) ORDER BY si.name
+    ) AS singers
+  FROM song_singers ss
+  INNER JOIN singers si ON ss.singer_id = si.id
+  GROUP BY ss.song_id
+)
+SELECT
+  s.public_id AS song_id,
+  s.title AS song_title,
+  s.artist as song_artist,
+  s.start_at AS song_start_at,
+  s.end_at AS song_end_at,
+  ms.public_id AS music_source_id,
+  ms.title AS music_source_title,
+  ms.url AS music_source_url,
+  ms.upload_date AS music_source_upload_date,
+  ms.thumbnail_url AS music_source_thumbnail_url,
+  mst.name AS music_source_type,
+  ssa.singers
+FROM target_songs ts
+INNER JOIN songs s ON ts.song_id = s.id
+INNER JOIN music_sources ms ON s.source_id = ms.id
+INNER JOIN music_source_types mst ON ms.type_id = mst.id
+LEFT JOIN song_singers_agg ssa ON s.id = ssa.song_id;
+"""
+
+        val params = mapOf(
+            "query" to query
+        )
+
+        return namedJdbc.query(sql, params, songRowMapper)
+    }
+
+    override fun complexSearch(title: String?, singers: List<String>, artist: String?): List<Song> {
+        val conditions = mutableListOf<String>()
+        val params = mutableMapOf<String, Any>()
+
+        if (title != null) {
+            conditions.add("s.title ILIKE '%' || :title || '%'")
+            params["title"] = title
+        }
+
+        if (artist != null) {
+            conditions.add("s.artist ILIKE '%' || :artist || '%'")
+            params["artist"] = artist
+        }
+
+        // 複数の歌手を指定する場合、すべての歌手を含む曲を検索
+        if (singers.isNotEmpty()) {
+            singers.forEachIndexed { index, singerName ->
+                val paramName = "singer$index"
+                conditions.add("""
+                    s.id IN (
+                        SELECT ss.song_id 
+                        FROM song_singers ss 
+                        INNER JOIN singers si ON ss.singer_id = si.id 
+                        WHERE si.name ILIKE '%' || :$paramName || '%'
+                    )
+                """.trimIndent())
+                params[paramName] = singerName
+            }
+        }
+
+        if (conditions.isEmpty()) {
+            return emptyList()
+        }
+
+        val whereClause = conditions.joinToString(" AND ")
+
+        val sql = """
+WITH target_songs AS (
+  SELECT DISTINCT s.id AS song_id
+  FROM songs s
+  WHERE $whereClause
+),
+song_singers_agg AS (
+  SELECT
+    ss.song_id,
+    json_agg(
+      json_build_object(
+        'singer_id', si.public_id,
+        'singer_name', si.name
+      ) ORDER BY si.name
+    ) AS singers
+  FROM song_singers ss
+  INNER JOIN singers si ON ss.singer_id = si.id
+  GROUP BY ss.song_id
+)
+SELECT
+  s.public_id AS song_id,
+  s.title AS song_title,
+  s.artist as song_artist,
+  s.start_at AS song_start_at,
+  s.end_at AS song_end_at,
+  ms.public_id AS music_source_id,
+  ms.title AS music_source_title,
+  ms.url AS music_source_url,
+  ms.upload_date AS music_source_upload_date,
+  ms.thumbnail_url AS music_source_thumbnail_url,
+  mst.name AS music_source_type,
+  ssa.singers
+FROM target_songs ts
+INNER JOIN songs s ON ts.song_id = s.id
+INNER JOIN music_sources ms ON s.source_id = ms.id
+INNER JOIN music_source_types mst ON ms.type_id = mst.id
+LEFT JOIN song_singers_agg ssa ON s.id = ssa.song_id;
+"""
 
         return namedJdbc.query(sql, params, songRowMapper)
     }
