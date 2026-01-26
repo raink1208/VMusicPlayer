@@ -4,6 +4,7 @@ services:
   backend:
     build:
       context: ./VMusicPlayerServer
+    container_name: vmusicplayer_backend
     ports:
       - "8080:8080"
       - "6565:6565"
@@ -19,6 +20,7 @@ services:
   frontend:
     build:
       context: ./VMusicPlayerApp
+    container_name: vmusicplayer_frontend
     ports:
       - "3000:3000"
     depends_on:
