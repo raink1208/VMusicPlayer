@@ -191,7 +191,7 @@ def main():
     ap.add_argument("--password", default="VMusicPlayer")
     ap.add_argument("--dbname", default="VMusicPlayer")
     ap.add_argument("--sslmode", default=None, help="disable, require, verify-ca, verify-full, etc.")
-    ap.add_argument("--json", require=True, help="Path to input JSON file")
+    ap.add_argument("--json", required=True, help="Path to input JSON file")
     args = ap.parse_args()
 
     ingest(
