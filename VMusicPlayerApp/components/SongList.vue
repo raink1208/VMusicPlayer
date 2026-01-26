@@ -1,109 +1,92 @@
 <template>
   <div class="song-list-container">
-    <!-- 固定YouTubeプレイヤーゾーン（16:9） -->
-    <div class="video-zone">
-      <div v-if="selectedSong" class="video-player">
-        <div class="player-header">
-          <div class="player-info">
-            <h3>{{ selectedSong.title }}</h3>
-            <p v-if="selectedSong.artist">{{ selectedSong.artist }}</p>
+    <div class="main-layout">
+      <!-- 左側: 動画プレイヤー (40%) -->
+      <div class="video-section">
+        <div class="video-zone">
+          <div v-if="selectedSong" class="video-player">
+            <YouTubePlayer
+              :video-id="extractYouTubeVideoId(selectedSong.source.url)"
+              :start-time="durationToSeconds(selectedSong.startAt)"
+              :end-time="durationToSeconds(selectedSong.endAt)"
+              :player-id="selectedSong.songId"
+            />
           </div>
-          <button @click="closePlayer" class="close-button">✕</button>
-        </div>
-        <YouTubePlayer
-          :video-id="extractYouTubeVideoId(selectedSong.source.url)"
-          :start-time="durationToSeconds(selectedSong.startAt)"
-          :end-time="durationToSeconds(selectedSong.endAt)"
-          :player-id="selectedSong.songId"
-        />
-      </div>
-      <div v-else class="video-placeholder">
-        <div class="placeholder-content">
-          <span class="placeholder-icon">🎵</span>
-          <p>楽曲を選択してください</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 楽曲一覧セクション -->
-    <div class="list-section">
-      <h1>楽曲一覧</h1>
-
-      <!-- 検索セクション -->
-      <div class="search-section">
-        <div class="search-input-container">
-          <input
-            v-model="searchQuery"
-            type="text"
-            class="search-input"
-            placeholder="楽曲名、アーティスト、歌手で検索..."
-            @keyup.enter="performSearch"
-          />
-          <button @click="performSearch" class="search-button">
-            🔍 検索
-          </button>
-          <button v-if="isSearchActive" @click="clearSearch" class="clear-button">
-            ✕ クリア
-          </button>
-        </div>
-        <div class="search-help">
-          <p>高度な検索: <code>title:曲名</code> <code>artist:作曲者</code> <code>singer:歌手名</code></p>
-        </div>
-      </div>
-
-      <div v-if="pending" class="loading">
-        読み込み中...
-      </div>
-
-      <div v-else-if="error" class="error">
-        <p>エラーが発生しました: {{ error.message }}</p>
-        <button @click="() => refresh()">再読み込み</button>
-      </div>
-
-      <div v-else-if="displayedSongs && displayedSongs.length > 0" class="song-list">
-        <div
-          v-for="song in displayedSongs"
-          :key="song.songId"
-          class="song-card"
-          :class="{
-            'selected': selectedSong?.songId === song.songId,
-            'clickable': song.source.sourceType === 'LIVE' || song.source.sourceType === 'VIDEO'
-          }"
-          @click="selectSong(song)"
-        >
-          <div class="song-thumbnail">
-            <img :src="song.source.thumbnailUrl" :alt="song.title" />
-            <div
-              v-if="song.source.sourceType === 'LIVE' || song.source.sourceType === 'VIDEO'"
-              class="play-overlay"
-            >
-              <span class="play-icon">▶</span>
-            </div>
-          </div>
-          <div class="song-info">
-            <h2 class="song-title">{{ song.title }}</h2>
-            <p class="song-artist" v-if="song.artist">{{ song.artist }}</p>
-            <div class="song-singers">
-              <span v-for="singer in song.singers" :key="singer.singerId" class="singer-tag">
-                {{ singer.singerName }}
-              </span>
-            </div>
-
-            <div class="song-source">
-              <a :href="getYoutubeUrlWithTimestamp(song.source.url, song.startAt)" target="_blank" rel="noopener noreferrer" @click.stop>
-                {{ song.source.title }}
-              </a>
-            </div>
-            <div class="song-duration">
-              再生時間: {{ formatDuration(song.startAt) }} - {{ formatDuration(song.endAt) }}
+          <div v-else class="video-placeholder">
+            <div class="placeholder-content">
+              <span class="placeholder-icon">🎵</span>
+              <p>楽曲を選択してください</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div v-else class="no-songs">
-        <p v-if="isSearchActive">検索結果が見つかりませんでした</p>
-        <p v-else>楽曲が登録されていません</p>
+      <!-- 右側: プレイリスト (60%) -->
+      <div class="playlist-section">
+        <!-- 検索セクション -->
+        <div class="search-section">
+          <div class="search-input-container">
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="search-input"
+              placeholder="検索..."
+              @keyup.enter="performSearch"
+            />
+            <button @click="performSearch" class="search-button">
+              🔍
+            </button>
+            <button v-if="isSearchActive" @click="clearSearch" class="clear-button">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div v-if="pending" class="loading">
+          読み込み中...
+        </div>
+
+        <div v-else-if="error" class="error">
+          <p>エラーが発生しました: {{ error.message }}</p>
+          <button @click="() => refresh()">再読み込み</button>
+        </div>
+
+        <div v-else-if="displayedSongs && displayedSongs.length > 0" class="song-list">
+          <div
+            v-for="song in displayedSongs"
+            :key="song.songId"
+            class="song-list-item"
+            :class="{
+              'selected': selectedSong?.songId === song.songId,
+              'clickable': song.source.sourceType === 'LIVE' || song.source.sourceType === 'VIDEO'
+            }"
+            @click="selectSong(song)"
+          >
+            <div class="item-thumbnail">
+              <img :src="song.source.thumbnailUrl" :alt="song.title" />
+              <div
+                v-if="song.source.sourceType === 'LIVE' || song.source.sourceType === 'VIDEO'"
+                class="play-overlay"
+              >
+                <span class="play-icon">▶</span>
+              </div>
+            </div>
+            <div class="item-content">
+              <div class="item-title">{{ song.title }}</div>
+              <div class="item-artist" v-if="song.artist">{{ song.artist }}</div>
+              <div class="item-singers">
+                <span v-for="singer in song.singers" :key="singer.singerId" class="singer-tag">
+                  {{ singer.singerName }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="no-songs">
+          <p v-if="isSearchActive">検索結果が見つかりませんでした</p>
+          <p v-else>楽曲が登録されていません</p>
+        </div>
       </div>
     </div>
   </div>
@@ -112,6 +95,9 @@
 <script setup lang="ts">
 import type { Song } from '../types/song'
 import YouTubePlayer from './YouTubePlayer.vue'
+import { ref, computed, watch } from 'vue'
+import { useRuntimeConfig, useFetch } from 'nuxt/app'
+import { $fetch } from 'ofetch'
 
 const config = useRuntimeConfig()
 
@@ -130,11 +116,6 @@ const selectSong = (song: Song) => {
     selectedSong.value = song
     console.log('選択された曲:', song.title)
   }
-}
-
-// プレイヤーを閉じる関数
-const closePlayer = () => {
-  selectedSong.value = null
 }
 
 // 検索を実行する関数
@@ -196,11 +177,11 @@ const displayedSongs = computed(() => {
 })
 
 // データを取得したらコンソールに表示
-watch(songs, (newSongs) => {
+watch(songs, (newSongs: Song[] | null | undefined) => {
   if (newSongs) {
     console.log('=== 楽曲データ取得 ===')
     console.log(`楽曲数: ${newSongs.length}`)
-    newSongs.forEach((song, index) => {
+    newSongs.forEach((song: Song, index: number) => {
       console.log(`[${index + 1}] ${song.title}`)
       console.log(`  - sourceType: ${song.source.sourceType}`)
       console.log(`  - URL: ${song.source.url}`)
@@ -256,12 +237,33 @@ const getYoutubeUrlWithTimestamp = (url: string, startAt: string): string => {
 
 <style scoped>
 .song-list-container {
-  max-width: 100%;
+  width: 100%;
+  height: 100vh;
   margin: 0;
   padding: 0;
+  background: #f5f5f5;
 }
 
-/* 16:9の動画ゾーン */
+.main-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: 0;
+}
+
+/* 左側: 動画セクション (40%) */
+.video-section {
+  width: 40%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #ddd;
+  padding: 16px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+}
+
 .video-zone {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -275,43 +277,26 @@ const getYoutubeUrlWithTimestamp = (url: string, startAt: string): string => {
   display: flex;
   flex-direction: column;
   background: #000;
-}
-
-.player-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-}
-
-.player-info h3 {
-  margin: 0 0 5px 0;
-  font-size: 1.3rem;
-  color: white;
-}
-
-.player-info p {
-  margin: 0;
-  color: #ccc;
-  font-size: 0.95rem;
+  position: relative;
 }
 
 .close-button {
-  background: #f44336;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(244, 67, 54, 0.9);
   color: white;
   border: none;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 1.5rem;
+  width: 36px;
+  height: 36px;
+  font-size: 1.3rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
-  flex-shrink: 0;
+  z-index: 10;
 }
 
 .close-button:hover {
@@ -333,62 +318,75 @@ const getYoutubeUrlWithTimestamp = (url: string, startAt: string): string => {
 }
 
 .placeholder-icon {
-  font-size: 5rem;
+  font-size: 4rem;
   display: block;
   margin-bottom: 20px;
 }
 
 .placeholder-content p {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   margin: 0;
   font-weight: 300;
 }
 
-/* 楽曲一覧セクション */
-.list-section {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 20px;
+/* 右側: プレイリストセクション (60%) */
+.playlist-section {
+  width: 60%;
+  height: 100%;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-h1 {
-  font-size: 2rem;
-  margin-bottom: 30px;
+.playlist-header {
+  padding: 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.playlist-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
   color: #333;
 }
 
 /* 検索セクション */
 .search-section {
-  margin-bottom: 30px;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
 }
 
 .search-input-container {
   display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
 }
 
 .search-input {
   flex: 1;
-  padding: 12px 16px;
-  font-size: 1rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   outline: none;
   transition: border-color 0.2s;
 }
 
 .search-input:focus {
   border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
 }
 
 .search-button {
-  padding: 12px 24px;
-  font-size: 1rem;
+  padding: 10px 14px;
+  font-size: 0.95rem;
   background-color: #1976d2;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
   white-space: nowrap;
@@ -399,12 +397,12 @@ h1 {
 }
 
 .clear-button {
-  padding: 12px 20px;
-  font-size: 1rem;
+  padding: 10px 12px;
+  font-size: 0.95rem;
   background-color: #f44336;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
   white-space: nowrap;
@@ -414,106 +412,47 @@ h1 {
   background-color: #d32f2f;
 }
 
-.search-help {
-  font-size: 0.85rem;
-  color: #666;
-  line-height: 1.5;
-}
-
-.search-help p {
-  margin: 5px 0;
-}
-
-.search-help code {
-  background-color: #f5f5f5;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-family: 'Courier New', monospace;
-  color: #d32f2f;
-}
-
-.loading, .error, .no-songs {
-  text-align: center;
-  padding: 40px;
-  font-size: 1.2rem;
-}
-
-.error {
-  color: #d32f2f;
-}
-
-.error button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.error button:hover {
-  background-color: #1565c0;
-}
-
+/* プレイリスト表示 */
 .song-list {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
 }
 
-@media (max-width: 1200px) {
-  .song-list {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.song-list-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: flex-start;
+  transition: background-color 0.2s, border-left 0.2s;
+  border-left: 3px solid transparent;
 }
 
-@media (max-width: 900px) {
-  .song-list {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .song-list {
-    grid-template-columns: 1fr;
-  }
-}
-
-.song-card {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  overflow: hidden;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-}
-
-.song-card.clickable {
+.song-list-item.clickable {
   cursor: pointer;
 }
 
-.song-card.clickable:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.song-list-item.clickable:hover {
+  background-color: #f9f9f9;
 }
 
-.song-card.selected {
-  border-color: #1976d2;
-  border-width: 2px;
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+.song-list-item.selected {
+  background-color: #e3f2fd;
+  border-left-color: #1976d2;
 }
 
-.song-thumbnail {
-  width: 100%;
-  height: 180px;
+.item-thumbnail {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
   overflow: hidden;
-  background-color: #f5f5f5;
+  background: #f0f0f0;
   position: relative;
 }
 
-.song-thumbnail img {
+.item-thumbnail img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -533,67 +472,138 @@ h1 {
   transition: opacity 0.2s;
 }
 
-.song-card.clickable:hover .play-overlay {
+.song-list-item.clickable:hover .play-overlay {
   opacity: 1;
 }
 
 .play-icon {
-  font-size: 3rem;
+  font-size: 1.5rem;
   color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-.song-info {
-  padding: 15px;
+.item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.song-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin: 0 0 8px 0;
-  color: #333;
-}
-
-.song-artist {
+.item-title {
+  font-weight: 600;
   font-size: 0.95rem;
-  color: #666;
-  margin: 0 0 12px 0;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.song-singers {
+.item-artist {
+  font-size: 0.85rem;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-singers {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 4px;
 }
 
 .singer-tag {
   display: inline-block;
-  padding: 4px 12px;
+  padding: 2px 8px;
   background-color: #e3f2fd;
   color: #1976d2;
-  border-radius: 12px;
-  font-size: 0.85rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
-
-.song-source {
-  margin-bottom: 8px;
-  font-size: 0.9rem;
-}
-
-.song-source a {
-  color: #1976d2;
-  text-decoration: none;
-}
-
-.song-source a:hover {
-  text-decoration: underline;
-}
-
-.song-duration {
-  font-size: 0.85rem;
+/* ローディング・エラー・空状態 */
+.loading,
+.error,
+.no-songs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 1rem;
   color: #666;
 }
-</style>
 
+.error {
+  color: #d32f2f;
+  flex-direction: column;
+}
+
+.error button {
+  margin-top: 15px;
+  padding: 8px 16px;
+  font-size: 0.95rem;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.error button:hover {
+  background-color: #1565c0;
+}
+
+/* レスポンシブ調整 */
+@media (max-width: 1024px) {
+  .video-section {
+    width: 45%;
+  }
+
+  .playlist-section {
+    width: 55%;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-layout {
+    flex-direction: column;
+  }
+
+  .video-section {
+    width: 100%;
+    height: 50vh;
+  }
+
+  .playlist-section {
+    width: 100%;
+    height: 50vh;
+  }
+
+  .item-thumbnail {
+    width: 50px;
+    height: 50px;
+  }
+
+  .song-list-item {
+    gap: 10px;
+    padding: 8px 10px;
+  }
+
+  .item-title {
+    font-size: 0.9rem;
+  }
+
+  .item-artist {
+    font-size: 0.8rem;
+  }
+
+  .singer-tag {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
+}
+</style>
