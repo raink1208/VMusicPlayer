@@ -13,18 +13,18 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "nuxt": "^4.0.1",
+    "nuxt": "4.1.0",
     "vue": "^3.5.17",
     "vue-router": "^4.5.1"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "packageManager": "yarn@4.12.0",
   "devDependencies": {
     "@nuxt/eslint": "^1.7.0",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-nuxt": "^4.0.0",
-    "eslint-plugin-vue": "^9.0.0",
     "eslint-plugin-prettier": "5.5.3",
+    "eslint-plugin-vue": "^9.0.0",
     "prettier": "^3.6.2",
     "typescript": "^5.8.3"
   }
