@@ -6,5 +6,14 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.API_BASE_URL || 'http://localhost:8080'
     }
+  },
+  typescript: {
+    strict: true,
+    typeCheck: false
+  },
+  vite: {
+    optimizeDeps: {
+      include: ['vuedraggable', 'sortablejs']
+    }
   }
 })
