@@ -3,11 +3,12 @@ package com.github.rain1208.vmusicplayerserver.services
 import com.github.rain1208.vmusicplayerserver.domain.models.Playlist
 import com.github.rain1208.vmusicplayerserver.domain.models.PlaylistDetail
 import com.github.rain1208.vmusicplayerserver.repository.PlaylistRepository
+import com.github.rain1208.vmusicplayerserver.utils.ULIDGenerator
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
-class PlaylistService(private val playlistRepository: PlaylistRepository) {
+class PlaylistService(private val playlistRepository: PlaylistRepository, private val ulidGenerator: ULIDGenerator) {
     private val logger = LoggerFactory.getLogger(PlaylistService::class.java)
 
     fun getAllPlaylists(): List<Playlist> {
@@ -29,23 +30,42 @@ class PlaylistService(private val playlistRepository: PlaylistRepository) {
         return playlist
     }
 
-    fun createPlaylist(name: String): Playlist {
-        logger.info("Creating playlist: name={}", name)
-        val playlist = playlistRepository.createPlaylist(name)
+    fun createPlaylist(name: String, songIds: List<String>): Playlist {
+        logger.info("Creating playlist: name={}, songCount={}", name, songIds.size)
+        val playlistId = ulidGenerator.generate()
+        val playlist = playlistRepository.createPlaylist(playlistId, name)
+
+        // 楽曲が指定されている場合は追加
+        if (songIds.isNotEmpty()) {
+            playlistRepository.updatePlaylistSongs(playlistId, songIds)
+        }
+
         logger.info("Playlist created successfully: playlistId={}", playlist.playlistId)
         return playlist
     }
 
-    fun updatePlaylistName(playlistId: String, name: String): Boolean {
-        logger.info("Updating playlist name: playlistId={}, newName={}", playlistId, name)
-        val updated = playlistRepository.updatePlaylistName(playlistId, name)
+    fun updatePlaylistInfo(playlistId: String, name: String): Boolean {
+        logger.info("Updating playlist info: playlistId={}, name={}", playlistId, name)
+        val updated = playlistRepository.updatePlaylistInfo(playlistId, name)
         if (updated) {
-            logger.info("Playlist name updated successfully: playlistId={}", playlistId)
+            logger.info("Playlist info updated successfully: playlistId={}", playlistId)
         } else {
-            logger.warn("Failed to update playlist name: playlistId={}", playlistId)
+            logger.warn("Failed to update playlist info: playlistId={}", playlistId)
         }
         return updated
     }
+
+    fun updatePlaylistSongs(playlistId: String, songIds: List<String>): Boolean {
+        logger.info("Updating playlist songs: playlistId={}, songCount={}", playlistId, songIds.size)
+        val updated = playlistRepository.updatePlaylistSongs(playlistId, songIds)
+        if (updated) {
+            logger.info("Playlist songs updated successfully: playlistId={}, songCount={}", playlistId, songIds.size)
+        } else {
+            logger.warn("Failed to update playlist songs: playlistId={}", playlistId)
+        }
+        return updated
+    }
+
 
     fun deletePlaylist(playlistId: String): Boolean {
         logger.info("Deleting playlist: playlistId={}", playlistId)
@@ -56,46 +76,6 @@ class PlaylistService(private val playlistRepository: PlaylistRepository) {
             logger.warn("Failed to delete playlist: playlistId={}", playlistId)
         }
         return deleted
-    }
-
-    fun addSongToPlaylist(playlistId: String, songId: String): Int {
-        logger.info("Adding song to playlist: playlistId={}, songId={}", playlistId, songId)
-        val position = playlistRepository.addSongToPlaylist(playlistId, songId)
-        logger.info("Song added to playlist at position {}: playlistId={}, songId={}",
-            position, playlistId, songId)
-        return position
-    }
-
-    fun removeSongFromPlaylist(playlistId: String, songId: String): Boolean {
-        logger.info("Removing song from playlist: playlistId={}, songId={}", playlistId, songId)
-        val removed = playlistRepository.removeSongFromPlaylist(playlistId, songId)
-        if (removed) {
-            logger.info("Song removed from playlist: playlistId={}, songId={}", playlistId, songId)
-        } else {
-            logger.warn("Failed to remove song from playlist: playlistId={}, songId={}",
-                playlistId, songId)
-        }
-        return removed
-    }
-
-    fun reorderPlaylistSongs(playlistId: String, songIds: List<String>): Boolean {
-        logger.info("Reordering playlist songs: playlistId={}, songCount={}",
-            playlistId, songIds.size)
-        val reordered = playlistRepository.reorderPlaylistSongs(playlistId, songIds)
-        if (reordered) {
-            logger.info("Playlist songs reordered successfully: playlistId={}", playlistId)
-        } else {
-            logger.warn("Failed to reorder playlist songs: playlistId={}", playlistId)
-        }
-        return reordered
-    }
-
-    fun createPlaylistFromQueue(name: String, songIds: List<String>): Playlist {
-        logger.info("Creating playlist from queue: name={}, songCount={}", name, songIds.size)
-        val playlist = playlistRepository.createPlaylistFromQueue(name, songIds)
-        logger.info("Playlist created from queue: playlistId={}, songCount={}",
-            playlist.playlistId, playlist.songCount)
-        return playlist
     }
 }
 

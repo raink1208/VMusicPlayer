@@ -124,8 +124,7 @@ ORDER BY ps.position
     }
 
     @Transactional
-    override fun createPlaylist(name: String): Playlist {
-        val publicId = generatePublicId()
+    override fun createPlaylist(playlistId: String, name: String): Playlist {
         val sql = """
 INSERT INTO playlists (public_id, name)
 VALUES (:public_id, :name)
@@ -133,7 +132,7 @@ RETURNING public_id, name, created_at, updated_at
         """.trimIndent()
 
         val params = mapOf(
-            "public_id" to publicId,
+            "public_id" to playlistId,
             "name" to name
         )
 
@@ -150,22 +149,6 @@ RETURNING public_id, name, created_at, updated_at
     }
 
     @Transactional
-    override fun updatePlaylistName(playlistId: String, name: String): Boolean {
-        val sql = """
-UPDATE playlists
-SET name = :name, updated_at = CURRENT_TIMESTAMP
-WHERE public_id = :playlist_id
-        """.trimIndent()
-
-        val params = mapOf(
-            "playlist_id" to playlistId,
-            "name" to name
-        )
-
-        return namedJdbc.update(sql, params) > 0
-    }
-
-    @Transactional
     override fun deletePlaylist(playlistId: String): Boolean {
         val sql = """
 DELETE FROM playlists WHERE public_id = :playlist_id
@@ -176,140 +159,70 @@ DELETE FROM playlists WHERE public_id = :playlist_id
     }
 
     @Transactional
-    override fun addSongToPlaylist(playlistId: String, songId: String): Int {
-        // Get max position
-        val maxPositionSql = """
-SELECT COALESCE(MAX(ps.position), 0) as max_position
-FROM playlist_songs ps
-INNER JOIN playlists p ON ps.playlist_id = p.id
-WHERE p.public_id = :playlist_id
-        """.trimIndent()
-
-        val maxPositionParams = mapOf("playlist_id" to playlistId)
-        val maxPosition = namedJdbc.queryForObject(maxPositionSql, maxPositionParams) { rs, _ ->
-            rs.getInt("max_position")
-        } ?: 0
-
-        val newPosition = maxPosition + 1
-
-        // Insert song
-        val insertSql = """
-INSERT INTO playlist_songs (playlist_id, song_id, position)
-SELECT p.id, s.id, :position
-FROM playlists p, songs s
-WHERE p.public_id = :playlist_id AND s.public_id = :song_id
-ON CONFLICT (playlist_id, song_id) DO NOTHING
-        """.trimIndent()
-
-        val insertParams = mapOf(
-            "playlist_id" to playlistId,
-            "song_id" to songId,
-            "position" to newPosition
-        )
-
-        namedJdbc.update(insertSql, insertParams)
-
-        // Update playlist updated_at
-        val updateSql = """
-UPDATE playlists SET updated_at = CURRENT_TIMESTAMP WHERE public_id = :playlist_id
-        """.trimIndent()
-
-        namedJdbc.update(updateSql, mapOf("playlist_id" to playlistId))
-
-        return newPosition
-    }
-
-    @Transactional
-    override fun removeSongFromPlaylist(playlistId: String, songId: String): Boolean {
+    override fun updatePlaylistInfo(playlistId: String, name: String): Boolean {
         val sql = """
-DELETE FROM playlist_songs
-WHERE playlist_id = (SELECT id FROM playlists WHERE public_id = :playlist_id)
-  AND song_id = (SELECT id FROM songs WHERE public_id = :song_id)
+UPDATE playlists
+SET name = :name,
+    updated_at = CURRENT_TIMESTAMP
+WHERE public_id = :playlist_id
         """.trimIndent()
 
         val params = mapOf(
             "playlist_id" to playlistId,
-            "song_id" to songId
+            "name" to name
         )
+        return namedJdbc.update(sql, params) > 0
+    }
 
-        val deleted = namedJdbc.update(sql, params) > 0
+    @Transactional
+    override fun updatePlaylistSongs(playlistId: String, songIds: List<String>): Boolean {
+        // プレイリストの内部IDを取得
+        val playlistInternalIdSql = """
+SELECT id FROM playlists WHERE public_id = :playlist_id
+        """.trimIndent()
 
-        if (deleted) {
-            // Update playlist updated_at
-            val updateSql = """
-UPDATE playlists SET updated_at = CURRENT_TIMESTAMP WHERE public_id = :playlist_id
+        val playlistInternalId = namedJdbc.queryForObject(
+            playlistInternalIdSql,
+            mapOf("playlist_id" to playlistId)
+        ) { rs, _ -> rs.getInt("id") } ?: return false
+
+        // 既存の楽曲関連を削除
+        val deleteSql = """
+DELETE FROM playlist_songs WHERE playlist_id = :playlist_id
+        """.trimIndent()
+
+        namedJdbc.update(deleteSql, mapOf("playlist_id" to playlistInternalId))
+
+        // 新しい楽曲を追加（バッチ挿入で最適化）
+        if (songIds.isNotEmpty()) {
+            val insertSql = """
+INSERT INTO playlist_songs (playlist_id, song_id, position)
+SELECT :playlist_id, s.id, :position
+FROM songs s
+WHERE s.public_id = :song_public_id
             """.trimIndent()
 
-            namedJdbc.update(updateSql, mapOf("playlist_id" to playlistId))
+            val batchParams = songIds.mapIndexed { index, songPublicId ->
+                mapOf(
+                    "playlist_id" to playlistInternalId,
+                    "song_public_id" to songPublicId,
+                    "position" to (index + 1)
+                )
+            }.toTypedArray()
+
+            namedJdbc.batchUpdate(insertSql, batchParams)
         }
 
-        return deleted
-    }
-
-    @Transactional
-    override fun reorderPlaylistSongs(playlistId: String, songIds: List<String>): Boolean {
-        // Delete all current positions
-        val deleteSql = """
-DELETE FROM playlist_songs
-WHERE playlist_id = (SELECT id FROM playlists WHERE public_id = :playlist_id)
+        // プレイリストのupdated_atを更新
+        val updatePlaylistSql = """
+UPDATE playlists
+SET updated_at = CURRENT_TIMESTAMP
+WHERE id = :playlist_id
         """.trimIndent()
 
-        namedJdbc.update(deleteSql, mapOf("playlist_id" to playlistId))
-
-        // Insert with new positions
-        val insertSql = """
-INSERT INTO playlist_songs (playlist_id, song_id, position)
-SELECT p.id, s.id, :position
-FROM playlists p, songs s
-WHERE p.public_id = :playlist_id AND s.public_id = :song_id
-        """.trimIndent()
-
-        songIds.forEachIndexed { index, songId ->
-            val params = mapOf(
-                "playlist_id" to playlistId,
-                "song_id" to songId,
-                "position" to index + 1
-            )
-            namedJdbc.update(insertSql, params)
-        }
-
-        // Update playlist updated_at
-        val updateSql = """
-UPDATE playlists SET updated_at = CURRENT_TIMESTAMP WHERE public_id = :playlist_id
-        """.trimIndent()
-
-        namedJdbc.update(updateSql, mapOf("playlist_id" to playlistId))
+        namedJdbc.update(updatePlaylistSql, mapOf("playlist_id" to playlistInternalId))
 
         return true
-    }
-
-    @Transactional
-    override fun createPlaylistFromQueue(name: String, songIds: List<String>): Playlist {
-        val playlist = createPlaylist(name)
-
-        val insertSql = """
-INSERT INTO playlist_songs (playlist_id, song_id, position)
-SELECT p.id, s.id, :position
-FROM playlists p, songs s
-WHERE p.public_id = :playlist_id AND s.public_id = :song_id
-        """.trimIndent()
-
-        songIds.forEachIndexed { index, songId ->
-            val params = mapOf(
-                "playlist_id" to playlist.playlistId,
-                "song_id" to songId,
-                "position" to index + 1
-            )
-            namedJdbc.update(insertSql, params)
-        }
-
-        // Return updated playlist with song count
-        return getAllPlaylists().find { it.playlistId == playlist.playlistId } ?: playlist
-    }
-
-    private fun generatePublicId(): String {
-        // Simple ULID-like ID generation
-        return "pl_${System.currentTimeMillis()}_${(0..999999).random()}"
     }
 }
 

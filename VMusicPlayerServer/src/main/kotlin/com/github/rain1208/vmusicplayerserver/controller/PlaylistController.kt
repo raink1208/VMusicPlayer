@@ -29,17 +29,30 @@ class PlaylistController(private val playlistService: PlaylistService) {
     }
 
     @PostMapping
-    fun createPlaylist(@RequestBody request: CreatePlaylistRequest): ResponseEntity<Playlist> {
-        val playlist = playlistService.createPlaylist(request.name)
+    fun createPlaylist(@RequestBody request: PlaylistCreateRequest): ResponseEntity<Playlist> {
+        val playlist = playlistService.createPlaylist(request.name, request.songIds)
         return ResponseEntity.status(HttpStatus.CREATED).body(playlist)
     }
 
     @PutMapping("/{playlistId}")
-    fun updatePlaylistName(
+    fun updatePlaylistInfo(
         @PathVariable playlistId: String,
-        @RequestBody request: UpdatePlaylistNameRequest
+        @RequestBody request: PlaylistInfoUpdateRequest
     ): ResponseEntity<Void> {
-        val updated = playlistService.updatePlaylistName(playlistId, request.name)
+        val updated = playlistService.updatePlaylistInfo(playlistId, request.name)
+        return if (updated) {
+            ResponseEntity.ok().build()
+        } else {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @PutMapping("/{playlistId}/songs")
+    fun updatePlaylistSongs(
+        @PathVariable playlistId: String,
+        @RequestBody request: PlaylistSongsUpdateRequest
+    ): ResponseEntity<Void> {
+        val updated = playlistService.updatePlaylistSongs(playlistId, request.songIds)
         return if (updated) {
             ResponseEntity.ok().build()
         } else {
@@ -55,49 +68,6 @@ class PlaylistController(private val playlistService: PlaylistService) {
         } else {
             ResponseEntity.notFound().build()
         }
-    }
-
-    @PostMapping("/{playlistId}/songs")
-    fun addSongToPlaylist(
-        @PathVariable playlistId: String,
-        @RequestBody request: AddSongToPlaylistRequest
-    ): ResponseEntity<Map<String, Int>> {
-        val position = playlistService.addSongToPlaylist(playlistId, request.songId)
-        return ResponseEntity.ok(mapOf("position" to position))
-    }
-
-    @DeleteMapping("/{playlistId}/songs/{songId}")
-    fun removeSongFromPlaylist(
-        @PathVariable playlistId: String,
-        @PathVariable songId: String
-    ): ResponseEntity<Void> {
-        val removed = playlistService.removeSongFromPlaylist(playlistId, songId)
-        return if (removed) {
-            ResponseEntity.noContent().build()
-        } else {
-            ResponseEntity.notFound().build()
-        }
-    }
-
-    @PutMapping("/{playlistId}/songs/reorder")
-    fun reorderPlaylistSongs(
-        @PathVariable playlistId: String,
-        @RequestBody request: ReorderPlaylistSongsRequest
-    ): ResponseEntity<Void> {
-        val reordered = playlistService.reorderPlaylistSongs(playlistId, request.songIds)
-        return if (reordered) {
-            ResponseEntity.ok().build()
-        } else {
-            ResponseEntity.notFound().build()
-        }
-    }
-
-    @PostMapping("/from-queue")
-    fun createPlaylistFromQueue(
-        @RequestBody request: CreatePlaylistFromQueueRequest
-    ): ResponseEntity<Playlist> {
-        val playlist = playlistService.createPlaylistFromQueue(request.name, request.songIds)
-        return ResponseEntity.status(HttpStatus.CREATED).body(playlist)
     }
 }
 
