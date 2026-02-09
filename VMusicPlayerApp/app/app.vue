@@ -1,9 +1,10 @@
 <template>
   <div>
     <NuxtRouteAnnouncer />
-    <SongList />
+    <MusicPlayer />
   </div>
 </template>
 <script setup lang="ts">
-import SongList from '~~/components/SongList.vue'
+import MusicPlayer from '~/components/MusicPlayer.vue'
 </script>
+

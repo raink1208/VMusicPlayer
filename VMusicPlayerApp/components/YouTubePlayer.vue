@@ -15,6 +15,9 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const emit = defineEmits<{
+  'video-ended': []
+}>()
 
 const player = ref<any>(null)
 const playerReady = ref(false)
@@ -67,21 +70,37 @@ const initPlayer = async () => {
         if (event.data === (window as any).YT.PlayerState.PLAYING && props.endTime) {
           checkTime()
         }
+        // 動画が終了したときにイベントを発火
+        if (event.data === (window as any).YT.PlayerState.ENDED) {
+          emit('video-ended')
+        }
       },
     },
   })
 }
 
 // 再生時刻をチェック
+let timeCheckInterval: NodeJS.Timeout | null = null
+
 const checkTime = () => {
   if (!player.value || !props.endTime) return
 
-  const interval = setInterval(() => {
+  // 既存のインターバルをクリア
+  if (timeCheckInterval) {
+    clearInterval(timeCheckInterval)
+  }
+
+  timeCheckInterval = setInterval(() => {
     if (player.value && player.value.getCurrentTime) {
       const currentTime = player.value.getCurrentTime()
       if (currentTime >= (props.endTime || 0)) {
         player.value.pauseVideo()
-        clearInterval(interval)
+        if (timeCheckInterval) {
+          clearInterval(timeCheckInterval)
+          timeCheckInterval = null
+        }
+        // 終了時刻に達したらイベントを発火
+        emit('video-ended')
       }
     }
   }, 100)
@@ -92,13 +111,16 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (timeCheckInterval) {
+    clearInterval(timeCheckInterval)
+    timeCheckInterval = null
+  }
   if (player.value && player.value.destroy) {
     player.value.destroy()
   }
 })
 
-// videoIdが変更された場合は再初期化
-watch(() => props.videoId, () => {
+watch([() => props.videoId, () => props.startTime, () => props.endTime], () => {
   if (player.value && player.value.loadVideoById) {
     player.value.loadVideoById({
       videoId: props.videoId,

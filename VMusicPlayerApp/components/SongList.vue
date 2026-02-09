@@ -6,6 +6,7 @@
         <div class="video-zone">
           <div v-if="selectedSong" class="video-player">
             <YouTubePlayer
+              :key="selectedSong.songId"
               :video-id="extractYouTubeVideoId(selectedSong.source.url)"
               :start-time="durationToSeconds(selectedSong.startAt)"
               :end-time="durationToSeconds(selectedSong.endAt)"
