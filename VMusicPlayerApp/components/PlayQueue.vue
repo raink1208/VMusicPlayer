@@ -141,7 +141,7 @@ const saveAsPlaylist = async () => {
 
   try {
     const songIds = queue.value.map(song => song.songId)
-    await playlistApi.createPlaylistFromQueue(newPlaylistName.value, songIds)
+    await playlistApi.createPlaylist(newPlaylistName.value, songIds)
     newPlaylistName.value = ''
     showSaveDialog.value = false
     alert('プレイリストを作成しました')

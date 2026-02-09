@@ -17,10 +17,10 @@ export const usePlaylistApi = () => {
     }
   }
 
-  const createPlaylist = async (name: string): Promise<Playlist> => {
+  const createPlaylist = async (name: string, songIds: string[] = []): Promise<Playlist> => {
     return await $fetch<Playlist>(`${baseURL}/api/playlists`, {
       method: 'POST',
-      body: { name }
+      body: { name, songIds }
     })
   }
 
@@ -37,6 +37,19 @@ export const usePlaylistApi = () => {
     }
   }
 
+  const updatePlaylistSongs = async (playlistId: string, songIds: string[]): Promise<boolean> => {
+    try {
+      await $fetch(`${baseURL}/api/playlists/${playlistId}/songs`, {
+        method: 'PUT',
+        body: { songIds }
+      })
+      return true
+    } catch (error) {
+      console.error('Failed to update playlist songs:', error)
+      return false
+    }
+  }
+
   const deletePlaylist = async (playlistId: string): Promise<boolean> => {
     try {
       await $fetch(`${baseURL}/api/playlists/${playlistId}`, {
@@ -49,56 +62,13 @@ export const usePlaylistApi = () => {
     }
   }
 
-  const addSongToPlaylist = async (playlistId: string, songId: string): Promise<number> => {
-    const result = await $fetch<{ position: number }>(`${baseURL}/api/playlists/${playlistId}/songs`, {
-      method: 'POST',
-      body: { songId }
-    })
-    return result.position
-  }
-
-  const removeSongFromPlaylist = async (playlistId: string, songId: string): Promise<boolean> => {
-    try {
-      await $fetch(`${baseURL}/api/playlists/${playlistId}/songs/${songId}`, {
-        method: 'DELETE'
-      })
-      return true
-    } catch (error) {
-      console.error('Failed to remove song from playlist:', error)
-      return false
-    }
-  }
-
-  const reorderPlaylistSongs = async (playlistId: string, songIds: string[]): Promise<boolean> => {
-    try {
-      await $fetch(`${baseURL}/api/playlists/${playlistId}/songs/reorder`, {
-        method: 'PUT',
-        body: { songIds }
-      })
-      return true
-    } catch (error) {
-      console.error('Failed to reorder playlist songs:', error)
-      return false
-    }
-  }
-
-  const createPlaylistFromQueue = async (name: string, songIds: string[]): Promise<Playlist> => {
-    return await $fetch<Playlist>(`${baseURL}/api/playlists/from-queue`, {
-      method: 'POST',
-      body: { name, songIds }
-    })
-  }
-
   return {
     getAllPlaylists,
     getPlaylist,
     createPlaylist,
     updatePlaylistName,
-    deletePlaylist,
-    addSongToPlaylist,
-    removeSongFromPlaylist,
-    reorderPlaylistSongs,
-    createPlaylistFromQueue
+    updatePlaylistSongs,
+    deletePlaylist
   }
 }
 

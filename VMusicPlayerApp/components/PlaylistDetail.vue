@@ -108,7 +108,10 @@ const playSong = (song: Song) => {
 const playAll = () => {
   if (playlist.value && playlist.value.songs.length > 0) {
     const songs = playlist.value.songs.map(item => item.song)
-    emit('play-song', songs[0], songs)
+    const firstSong = songs[0]
+    if (firstSong) {
+      emit('play-song', firstSong, songs)
+    }
   }
 }
 
@@ -127,10 +130,15 @@ const confirmRemove = (song: Song) => {
 }
 
 const removeSong = async () => {
-  if (!removeTarget.value) return
+  if (!removeTarget.value || !playlist.value) return
 
   try {
-    await playlistApi.removeSongFromPlaylist(props.playlistId, removeTarget.value.songId)
+    // 削除対象以外の楽曲IDを取得
+    const updatedSongIds = playlist.value.songs
+      .filter(item => item.song.songId !== removeTarget.value!.songId)
+      .map(item => item.song.songId)
+
+    await playlistApi.updatePlaylistSongs(props.playlistId, updatedSongIds)
     showRemoveDialog.value = false
     removeTarget.value = null
     await refresh()
